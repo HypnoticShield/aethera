@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -8,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-mongoose.connect('mongodb://localhost:27017/aethera')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aethera')
 .then(() => console.log('User DB connected'))
 .catch(err => console.log(err));
 
@@ -26,11 +27,11 @@ let plans = [
     { id: 2, name: "Premium", price: "499" }
 ];
 
-app.get('/plans', (req, res) => {
+app.get('/api/subscription/plans', (req, res) => {
     res.json(plans);
 });
 
-app.post('/subscribe', async (req, res) => {
+app.post('/api/subscription/subscribe', async (req, res) => {
     const { username, plan } = req.body;
 
     await User.findOneAndUpdate(
@@ -43,10 +44,11 @@ app.post('/subscribe', async (req, res) => {
     });
 });
 
-app.get('/', (req, res) => {
+app.get('/api/subscription', (req, res) => {
     res.send("Subscription Service Running");
 });
 
-app.listen(3002, () => {
-    console.log('Subscription service running on port 3002');
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, () => {
+    console.log(`Subscription service running on port ${PORT}`);
 });

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -9,9 +10,9 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const SECRET = "aethera_secret";
+const SECRET = process.env.JWT_SECRET || "aethera_secret";
 
-mongoose.connect('mongodb://localhost:27017/aethera')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aethera')
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.log(err));
 
@@ -30,7 +31,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-app.post('/register', async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
     const { username, password } = req.body;
 
     const user = new User({
@@ -45,7 +46,7 @@ app.post('/register', async (req, res) => {
     });
 });
 
-app.post('/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
 
     const user = await User.findOne({ username, password });
@@ -60,19 +61,21 @@ app.post('/login', async (req, res) => {
 
     res.json({
         message: "Login successful",
-        token
+        token,
+        subscription: user.subscription
     });
 });
 
-app.get('/users', async (req, res) => {
+app.get('/api/auth/users', async (req, res) => {
     const users = await User.find();
     res.json(users);
 });
 
-app.get('/', (req, res) => {
+app.get('/api/auth', (req, res) => {
     res.send("Auth Service Running");
 });
 
-app.listen(3000, () => {
-    console.log('Auth service running on port 3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Auth service running on port ${PORT}`);
 });

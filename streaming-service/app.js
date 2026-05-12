@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -7,7 +8,7 @@ const app = express();
 
 app.use(cors());
 
-mongoose.connect('mongodb://localhost:27017/aethera')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aethera')
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.log(err));
 
@@ -20,9 +21,10 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-app.use('/videos', express.static(path.join(__dirname, '../videos')));
+// Removed for S3 migration
+// app.use('/videos', express.static(path.join(__dirname, '../videos')));
 
-app.get('/stream/:movie', async (req, res) => {
+app.get('/api/streaming/stream/:movie', async (req, res) => {
     const movie = req.params.movie;
     const username = req.query.username;
 
@@ -33,13 +35,15 @@ app.get('/stream/:movie', async (req, res) => {
         );
     }
 
-    res.sendFile(path.join(__dirname, '../videos', movie));
+    const s3BaseUrl = process.env.S3_BASE_URL || 'https://aethera-media-bucket.s3.amazonaws.com';
+    res.redirect(`${s3BaseUrl}/videos/${movie}`);
 });
 
-app.get('/', (req, res) => {
+app.get('/api/streaming', (req, res) => {
     res.send('Streaming Service Running');
 });
 
-app.listen(3003, () => {
-    console.log('Streaming service running on port 3003');
+const PORT = process.env.PORT || 3003;
+app.listen(PORT, () => {
+    console.log(`Streaming service running on port ${PORT}`);
 });
